@@ -145,7 +145,7 @@ async def download_document(document_id: int, db: Session = Depends(get_db)):
     try:
         response = minio_client.get_object(bucket_name, db_document.filename)
         return StreamingResponse(response.stream(32*1024), media_type="application/octet-stream", headers={
-            "Content-Disposition": f"attachment; filename=\"{db_document.filename}\"
+            "Content-Disposition": f"attachment; filename=\"{db_document.filename}\""
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error downloading file: {e}")
