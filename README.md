@@ -1,4 +1,4 @@
-# Aplikace Ranger
+# Aplikace Ranger 2.0
 
 Toto je komplexní aplikace pro správu montáží regálových systémů STOW.
 
