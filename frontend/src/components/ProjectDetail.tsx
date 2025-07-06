@@ -51,7 +51,7 @@ const ProjectDetail: React.FC = () => {
   const [overallProgress, setOverallProgress] = useState<number | null>(null);
   const [editingProgressLog, setEditingProgressLog] = useState<ProgressLog | null>(null);
   const [pdfToView, setPdfToView] = useState<string | null>(null);
-  const [filterCategory, setFilterCategory] = useState<string>('');
+  const [filterCategory, setFilterCategory] = useState<string>(''); // eslint-disable-line @typescript-eslint/no-unused-vars
   const [ocrResult, setOcrResult] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<any[]>([]);
   const [aisleCountResult, setAisleCountResult] = useState<any | null>(null);
@@ -67,7 +67,7 @@ const ProjectDetail: React.FC = () => {
 
   useEffect(() => {
     fetchProject();
-  }, [projectId]);
+  }, [projectId, fetchProject]);
 
   useEffect(() => {
     let url = `/api/projects/${projectId}/documents/`;

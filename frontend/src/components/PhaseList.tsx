@@ -81,19 +81,7 @@ const PhaseList: React.FC<PhaseListProps> = ({
       });
   };
 
-  const handleAddTask = (phaseId: number, taskName: string, taskDescription: string) => {
-    fetch(`/api/phases/${phaseId}/tasks/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name: taskName, description: taskDescription }),
-    })
-      .then(response => response.json())
-      .then(() => {
-        onTaskAdded();
-      });
-  };
+  
 
   const handleUpdateTask = (taskId: number, taskName: string, taskDescription: string, taskStatus: string) => {
     fetch(`/api/tasks/${taskId}`, {
