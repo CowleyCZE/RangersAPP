@@ -34,6 +34,18 @@ class DocumentBase(BaseModel):
 class Document(DocumentBase):
     id: int
     project_id: int
+    extracted_data: list[ExtractedData] = []
+
+    class Config:
+        orm_mode = True
+
+class ExtractedDataBase(BaseModel):
+    key: str
+    value: str
+
+class ExtractedData(ExtractedDataBase):
+    id: int
+    document_id: int
 
     class Config:
         orm_mode = True
@@ -50,6 +62,37 @@ class Project(ProjectBase):
     owner_id: int
     documents: list[Document] = []
     progress_logs: list[ProgressLog] = []
+    phases: list[Phase] = []
+
+    class Config:
+        orm_mode = True
+
+class PhaseBase(BaseModel):
+    name: str
+    description: str | None = None
+
+class PhaseCreate(PhaseBase):
+    pass
+
+class Phase(PhaseBase):
+    id: int
+    project_id: int
+    tasks: list[Task] = []
+
+    class Config:
+        orm_mode = True
+
+class TaskBase(BaseModel):
+    name: str
+    description: str | None = None
+    status: str = "pending"
+
+class TaskCreate(TaskBase):
+    pass
+
+class Task(TaskBase):
+    id: int
+    phase_id: int
 
     class Config:
         orm_mode = True

@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import PdfViewer from './PdfViewer';
+import PhaseList from './PhaseList';
 
 interface Document {
   id: number;
   filename: string;
   category?: string;
+  extracted_data?: { key: string; value: string }[];
 }
 
 interface ProgressLog {
@@ -16,12 +18,27 @@ interface ProgressLog {
   notes: string;
 }
 
+interface Task {
+  id: number;
+  name: string;
+  description?: string;
+  status: string;
+}
+
+interface Phase {
+  id: number;
+  name: string;
+  description?: string;
+  tasks: Task[];
+}
+
 interface Project {
   id: number;
   name: string;
   description: string;
   documents: Document[];
   progress_logs: ProgressLog[];
+  phases: Phase[];
 }
 
 const ProjectDetail: React.FC = () => {
@@ -37,7 +54,7 @@ const ProjectDetail: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('');
   const [ocrResult, setOcrResult] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<any[]>([]);
-  const [anomalyResult, setAnomalyResult] = useState<any | null>(null);
+  const [aisleCountResult, setAisleCountResult] = useState<any | null>(null);
 
   const fetchProject = () => {
     fetch(`/api/projects/${projectId}`)
@@ -159,17 +176,17 @@ const ProjectDetail: React.FC = () => {
       });
   };
 
-  const handleAnomalyDetection = (documentId: number) => {
-    fetch(`/api/documents/${documentId}/detect_anomaly`, {
+  const handleCountAisles = (documentId: number) => {
+    fetch(`/api/documents/${documentId}/count_aisles`, {
       method: 'POST',
     })
       .then(response => response.json())
       .then(data => {
-        setAnomalyResult(data);
+        setAisleCountResult(data);
       })
       .catch(error => {
-        console.error('Error during anomaly detection:', error);
-        setAnomalyResult({ anomaly_detected: false, message: 'Chyba při detekci anomálií.', details: error.message });
+        console.error('Error during aisle counting:', error);
+        setAisleCountResult({ num_aisles: 0, message: 'Chyba při počítání uliček.' });
       });
   };
 
@@ -222,6 +239,17 @@ const ProjectDetail: React.FC = () => {
         )}
       </div>
 
+      <PhaseList
+        projectId={parseInt(projectId || '0')}
+        phases={project.phases}
+        onPhaseAdded={fetchProject}
+        onPhaseUpdated={fetchProject}
+        onPhaseDeleted={fetchProject}
+        onTaskAdded={fetchProject}
+        onTaskUpdated={fetchProject}
+        onTaskDeleted={fetchProject}
+      />
+
       <div className="mt-8">
         <h3 className="text-xl font-bold mb-4">Nahrát Dokument</h3>
         <input type="file" onChange={handleFileChange} className="mb-2" />
@@ -239,13 +267,6 @@ const ProjectDetail: React.FC = () => {
 
       <div className="mt-8">
         <h3 className="text-xl font-bold mb-4">Nahrané Dokumenty</h3>
-        <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} className="w-full p-2 border rounded mb-4">
-          <option value="">Všechny kategorie</option>
-          <option value="vykres">Výkres</option>
-          <option value="rozpocet">Rozpočet</option>
-          <option value="fotodokumentace">Fotodokumentace</option>
-          <option value="ostatni">Ostatní</option>
-        </select>
         {project.documents.length === 0 ? (
           <p>Žádné dokumenty nebyly nahrány.</p>
         ) : (
@@ -256,7 +277,7 @@ const ProjectDetail: React.FC = () => {
                   <a href={`/api/documents/${doc.id}/download`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                     {doc.filename}
                   </a>
-                  {doc.category && <span className="ml-2 text-sm text-gray-500">({doc.category})</span>}
+                  {doc.category && <span className="ml-2 text-sm text-gray-600">({doc.category})</span>}
                 </div>
                 {doc.filename.toLowerCase().endsWith('.pdf') && (
                   <button onClick={() => handleViewPdf(doc.id)} className="bg-gray-200 text-gray-800 px-2 py-1 rounded ml-2">Náhled</button>
@@ -265,7 +286,7 @@ const ProjectDetail: React.FC = () => {
                   <button onClick={() => handleOcr(doc.id)} className="bg-blue-200 text-blue-800 px-2 py-1 rounded ml-2">OCR</button>
                 )}
                 {(doc.filename.toLowerCase().endsWith('.png') || doc.filename.toLowerCase().endsWith('.jpg') || doc.filename.toLowerCase().endsWith('.jpeg')) && (
-                  <button onClick={() => handleAnomalyDetection(doc.id)} className="bg-purple-200 text-purple-800 px-2 py-1 rounded ml-2">Anomálie</button>
+                  <button onClick={() => handleCountAisles(doc.id)} className="bg-green-200 text-green-800 px-2 py-1 rounded ml-2">Spočítat uličky</button>
                 )}
               </li>
             ))}
@@ -302,14 +323,12 @@ const ProjectDetail: React.FC = () => {
         </div>
       )}
 
-      {anomalyResult && (
+      {aisleCountResult && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-white p-4 rounded-lg max-w-3xl max-h-full overflow-auto relative">
-            <button onClick={() => setAnomalyResult(null)} className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold">X</button>
-            <h3 className="text-xl font-bold mb-2">Výsledek Detekce Anomálií</h3>
-            <p>Detekována anomálie: {anomalyResult.anomaly_detected ? 'Ano' : 'Ne'}</p>
-            <p>Zpráva: {anomalyResult.message}</p>
-            {anomalyResult.details && <p>Detaily: {anomalyResult.details}</p>}
+            <button onClick={() => setAisleCountResult(null)} className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-lg font-bold">X</button>
+            <h3 className="text-xl font-bold mb-2">Počet Uliček</h3>
+            <p>{aisleCountResult.message}</p>
           </div>
         </div>
       )}

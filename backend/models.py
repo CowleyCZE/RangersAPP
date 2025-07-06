@@ -24,6 +24,7 @@ class Project(Base):
     owner = relationship("User")
     documents = relationship("Document", back_populates="project")
     progress_logs = relationship("ProgressLog", back_populates="project")
+    phases = relationship("Phase", back_populates="project")
 
 class Document(Base):
     __tablename__ = 'documents'
@@ -43,6 +44,35 @@ class ProgressLog(Base):
     notes = Column(String)
 
     project = relationship("Project")
+
+class ExtractedData(Base):
+    __tablename__ = 'extracted_data'
+    id = Column(Integer, primary_key=True, index=True)
+    document_id = Column(Integer, ForeignKey('documents.id'))
+    key = Column(String, index=True)
+    value = Column(String)
+
+    document = relationship("Document")
+
+class Phase(Base):
+    __tablename__ = 'phases'
+    id = Column(Integer, primary_key=True, index=True)
+    project_id = Column(Integer, ForeignKey('projects.id'))
+    name = Column(String, index=True)
+    description = Column(String, nullable=True)
+
+    project = relationship("Project", back_populates="phases")
+    tasks = relationship("Task", back_populates="phase")
+
+class Task(Base):
+    __tablename__ = 'tasks'
+    id = Column(Integer, primary_key=True, index=True)
+    phase_id = Column(Integer, ForeignKey('phases.id'))
+    name = Column(String, index=True)
+    description = Column(String, nullable=True)
+    status = Column(String, default="pending") # e.g., pending, in_progress, completed
+
+    phase = relationship("Phase", back_populates="tasks")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

@@ -13,6 +13,8 @@ from PIL import Image
 import pytesseract
 import cv2
 import numpy as np
+from PyPDF2 import PdfReader
+from openpyxl import load_workbook
 
 
 # --- JWT nastavení ---
@@ -225,10 +227,76 @@ async def perform_ocr(document_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Document not found or OCR failed")
     return {"ocr_text": ocr_text, "extracted_data": extracted_data}
 
-@app.post("/documents/{document_id}/detect_anomaly")
-async def detect_anomaly(document_id: int):
-    anomaly_result = crud.detect_anomaly_in_image(document_id, minio_client)
-    return anomaly_result
+@app.post("/projects/{project_id}/phases/", response_model=schemas.Phase)
+def create_phase_for_project(
+    project_id: int,
+    phase: schemas.PhaseCreate,
+    db: Session = Depends(get_db)
+):
+    return crud.create_phase(db=db, phase=phase, project_id=project_id)
+
+@app.get("/phases/{phase_id}", response_model=schemas.Phase)
+def read_phase(phase_id: int, db: Session = Depends(get_db)):
+    db_phase = crud.get_phase(db, phase_id=phase_id)
+    if db_phase is None:
+        raise HTTPException(status_code=404, detail="Phase not found")
+    return db_phase
+
+@app.put("/phases/{phase_id}", response_model=schemas.Phase)
+def update_phase(
+    phase_id: int,
+    phase: schemas.PhaseCreate,
+    db: Session = Depends(get_db)
+):
+    db_phase = crud.update_phase(db=db, phase_id=phase_id, phase=phase)
+    if db_phase is None:
+        raise HTTPException(status_code=404, detail="Phase not found")
+    return db_phase
+
+@app.delete("/phases/{phase_id}")
+def delete_phase(phase_id: int, db: Session = Depends(get_db)):
+    db_phase = crud.delete_phase(db=db, phase_id=phase_id)
+    if db_phase is None:
+        raise HTTPException(status_code=404, detail="Phase not found")
+    return {"message": "Phase deleted successfully"}
+
+@app.post("/phases/{phase_id}/tasks/", response_model=schemas.Task)
+def create_task_for_phase(
+    phase_id: int,
+    task: schemas.TaskCreate,
+    db: Session = Depends(get_db)
+):
+    return crud.create_task(db=db, task=task, phase_id=phase_id)
+
+@app.get("/tasks/{task_id}", response_model=schemas.Task)
+def read_task(task_id: int, db: Session = Depends(get_db)):
+    db_task = crud.get_task(db, task_id=task_id)
+    if db_task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return db_task
+
+@app.put("/tasks/{task_id}", response_model=schemas.Task)
+def update_task(
+    task_id: int,
+    task: schemas.TaskCreate,
+    db: Session = Depends(get_db)
+):
+    db_task = crud.update_task(db=db, task_id=task_id, task=task)
+    if db_task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return db_task
+
+@app.delete("/tasks/{task_id}")
+def delete_task(task_id: int, db: Session = Depends(get_db)):
+    db_task = crud.delete_task(db=db, task_id=task_id)
+    if db_task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"message": "Task deleted successfully"}
+
+@app.post("/documents/{document_id}/count_aisles")
+async def count_aisles(document_id: int):
+    aisle_count_result = crud.count_aisles_in_image(document_id, minio_client)
+    return aisle_count_result
 
 @app.get("/export/projects", response_class=StreamingResponse)
 def export_projects(db: Session = Depends(get_db)):
