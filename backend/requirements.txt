@@ -11,4 +11,6 @@ openpyxl==3.0.9
 python-docx==0.8.11
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
-cs_core_news_sm
+cs_core_news_lg
+opencv-python==4.8.1.78
+numpy==1.24.3

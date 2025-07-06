@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from . import models, schemas
 from passlib.context import CryptContext
+from .data_extraction import extract_key_data_from_text
 
 # --- Hesla a uživatelé ---
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -26,147 +27,65 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.commit()
     db.refresh(db_user)
     return db_user
+
 from minio import Minio
 import pytesseract
 from PIL import Image
 from io import BytesIO
-import spacy
 import pdfplumber
 import openpyxl
 from datetime import datetime
 import re
 from typing import Dict, Any, List, Optional
+import logging
 
-# Načtení rozšířeného modelu spaCy
-try:
-    nlp = spacy.load("cs_core_news_lg")
-except OSError:
-    # Pokud model není nainstalován, stáhneme ho
-    spacy.cli.download("cs_core_news_lg")
-    nlp = spacy.load("cs_core_news_lg")
-
-def extract_dates(text: str) -> List[datetime]:
-    """Extrahuje data z textu pomocí regulárních výrazů a spaCy"""
-    dates = []
-    # Regex pro různé formáty dat
-    date_patterns = [
-        r'\d{1,2}\.\s*\d{1,2}\.\s*\d{4}',
-        r'\d{4}-\d{1,2}-\d{1,2}',
-    ]
-    
-    for pattern in date_patterns:
-        matches = re.finditer(pattern, text)
-        for match in matches:
-            try:
-                date_str = match.group()
-                if '.' in date_str:
-                    date = datetime.strptime(date_str, '%d.%m.%Y')
-                else:
-                    date = datetime.strptime(date_str, '%Y-%m-%d')
-                dates.append(date)
-            except ValueError:
-                continue
-    
-    return dates
-
-def extract_measurements(text: str) -> List[Dict[str, Any]]:
-    """Extrahuje rozměry a další měřitelné hodnoty z textu"""
-    measurements = []
-    doc = nlp(text)
-    
-    # Hledání číselných hodnot s jednotkami
-    measurement_patterns = [
-        (r'(\d+(?:,\d+)?)\s*(mm|cm|m|kg|t)', 'dimension'),
-        (r'(\d+(?:,\d+)?)\s*(kg/m²|t/m²)', 'load_capacity'),
-    ]
-    
-    for pattern, measure_type in measurement_patterns:
-        matches = re.finditer(pattern, text)
-        for match in matches:
-            value, unit = match.groups()
-            value = float(value.replace(',', '.'))
-            measurements.append({
-                'type': measure_type,
-                'value': value,
-                'unit': unit
-            })
-    
-    return measurements
-
-def extract_milestones(text: str) -> List[Dict[str, Any]]:
-    """Extrahuje milníky projektu z textu"""
-    doc = nlp(text)
-    milestones = []
-    
-    # Klíčová slova pro identifikaci milníků
-    milestone_keywords = ['milník', 'fáze', 'etapa', 'deadline', 'termín']
-    
-    for sent in doc.sents:
-        sent_text = sent.text.lower()
-        if any(keyword in sent_text for keyword in milestone_keywords):
-            dates = extract_dates(sent.text)
-            if dates:
-                milestones.append({
-                    'description': sent.text,
-                    'date': dates[0]
-                })
-    
-    return milestones
-
-def extract_key_data_from_text(text: str) -> Dict[str, Any]:
-    """
-    Hlavní funkce pro extrakci klíčových dat z textu.
-    Zpracovává text pomocí spaCy a dalších metod pro získání strukturovaných dat.
-    """
-    doc = nlp(text)
-    
-    # Inicializace výsledného slovníku
-    extracted_data = {
-        'dates': extract_dates(text),
-        'measurements': extract_measurements(text),
-        'milestones': extract_milestones(text),
-        'entities': {},
-        'keywords': set()
-    }
-    
-    # Extrakce pojmenovaných entit
-    for ent in doc.ents:
-        if ent.label_ not in extracted_data['entities']:
-            extracted_data['entities'][ent.label_] = []
-        extracted_data['entities'][ent.label_].append({
-            'text': ent.text,
-            'label': ent.label_
-        })
-    
-    # Extrakce klíčových slov (podstatná jména a jejich fráze)
-    for chunk in doc.noun_chunks:
-        if len(chunk.text.split()) > 1:  # Pouze víceslovné fráze
-            extracted_data['keywords'].add(chunk.text)
-    
-    # Převod množiny na seznam pro JSON serializaci
-    extracted_data['keywords'] = list(extracted_data['keywords'])
-    
-    return extracted_data
+logger = logging.getLogger(__name__)
 
 def process_pdf_document(file_content: bytes) -> str:
     """Zpracování PDF dokumentu a extrakce textu"""
     text = ""
-    with pdfplumber.open(BytesIO(file_content)) as pdf:
-        for page in pdf.pages:
-            text += page.extract_text() or ""
+    try:
+        with pdfplumber.open(BytesIO(file_content)) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+    except Exception as e:
+        logger.error(f"Chyba při zpracování PDF: {e}")
     return text
 
 def process_xlsx_document(file_content: bytes) -> str:
     """Zpracování Excel dokumentu a extrakce textu"""
     text = []
-    wb = openpyxl.load_workbook(BytesIO(file_content), data_only=True)
-    for sheet in wb.sheetnames:
-        ws = wb[sheet]
-        for row in ws.iter_rows():
-            row_text = " ".join(str(cell.value) for cell in row if cell.value)
-            if row_text:
-                text.append(row_text)
+    try:
+        wb = openpyxl.load_workbook(BytesIO(file_content), data_only=True)
+        for sheet_name in wb.sheetnames:
+            ws = wb[sheet_name]
+            text.append(f"=== {sheet_name} ===")
+            for row in ws.iter_rows():
+                row_text = " ".join(str(cell.value) for cell in row if cell.value is not None)
+                if row_text.strip():
+                    text.append(row_text)
+    except Exception as e:
+        logger.error(f"Chyba při zpracování XLSX: {e}")
     return "\n".join(text)
+
+def process_docx_document(file_content: bytes) -> str:
+    """Zpracování Word dokumentu a extrakce textu"""
+    try:
+        from docx import Document
+        doc = Document(BytesIO(file_content))
+        text = []
+        for paragraph in doc.paragraphs:
+            if paragraph.text.strip():
+                text.append(paragraph.text)
+        return "\n".join(text)
+    except ImportError:
+        logger.warning("python-docx není nainstalován, DOCX soubory nebudou zpracovány")
+        return ""
+    except Exception as e:
+        logger.error(f"Chyba při zpracování DOCX: {e}")
+        return ""
 
 def get_project(db: Session, project_id: int):
     return db.query(models.Project).filter(models.Project.id == project_id).first()
@@ -249,22 +168,39 @@ def perform_ocr_on_document(db: Session, document_id: int, minio_client: Minio):
         file_content = response.read()
         
         # Zpracování podle typu dokumentu
-        if db_document.filename.lower().endswith('.pdf'):
-            text = process_pdf_document(file_content)
-        elif db_document.filename.lower().endswith(('.xlsx', '.xls')):
-            text = process_xlsx_document(file_content)
-        else:
-            # Pro obrázky použijeme původní OCR
-            image = Image.open(BytesIO(file_content))
-            text = pytesseract.image_to_string(image, lang='ces')
+        filename_lower = db_document.filename.lower()
         
-        # Extrakce klíčových dat
+        if filename_lower.endswith('.pdf'):
+            text = process_pdf_document(file_content)
+        elif filename_lower.endswith(('.xlsx', '.xls')):
+            text = process_xlsx_document(file_content)
+        elif filename_lower.endswith('.docx'):
+            text = process_docx_document(file_content)
+        elif filename_lower.endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp')):
+            # Pro obrázky použijeme OCR
+            image = Image.open(BytesIO(file_content))
+            text = pytesseract.image_to_string(image, lang='ces+eng')
+        else:
+            logger.warning(f"Nepodporovaný typ souboru: {db_document.filename}")
+            return None, None
+        
+        if not text.strip():
+            logger.warning(f"Žádný text nebyl extrahován ze souboru: {db_document.filename}")
+            return "", {}
+        
+        # Pokročilá extrakce klíčových dat
         extracted_data = extract_key_data_from_text(text)
+        
+        logger.info(f"Úspěšně zpracován dokument {db_document.filename}, extrahováno {len(text)} znaků")
         return text, extracted_data
         
     except Exception as e:
-        print(f"Error processing document: {e}")
+        logger.error(f"Chyba při zpracování dokumentu {document_id}: {e}")
         return None, None
+    finally:
+        if 'response' in locals():
+            response.close()
+            response.release_conn()
 
 def get_total_projects_count(db: Session):
     return db.query(models.Project).count()
@@ -273,7 +209,11 @@ def get_completed_projects_count(db: Session):
     completed_projects = db.query(models.Project).join(models.ProgressLog).filter(models.ProgressLog.percentage_completed == 100).distinct().count()
     return completed_projects
 
-
+def get_average_overall_progress(db: Session):
+    all_projects = db.query(models.Project).all()
+    if not all_projects:
+        return 0
+    
     total_overall_progress = 0
     for project in all_projects:
         total_overall_progress += get_project_overall_progress(db, project.id)
@@ -291,10 +231,12 @@ def detect_anomaly_in_image(document_id: int, minio_client: Minio):
     bucket_name = "ranger-bucket"
     from .models import SessionLocal, Document
     db = SessionLocal()
-    db_document = db.query(Document).filter(Document.id == document_id).first()
-    if not db_document:
-        return {"anomaly_detected": False, "message": "Dokument nenalezen."}
+    
     try:
+        db_document = db.query(Document).filter(Document.id == document_id).first()
+        if not db_document:
+            return {"anomaly_detected": False, "message": "Dokument nenalezen."}
+        
         response = minio_client.get_object(bucket_name, db_document.filename)
         file_content = response.read()
         image = Image.open(BytesIO(file_content)).convert('RGB')
@@ -316,7 +258,7 @@ def detect_anomaly_in_image(document_id: int, minio_client: Minio):
         dark_area = np.sum(thresh == 255) / (thresh.shape[0] * thresh.shape[1])
         damaged = dark_area > 0.15
 
-        # 4. (Volitelně) Detekce chybějících objektů pomocí jednoduché kontury
+        # 4. Detekce chybějících objektů pomocí jednoduché kontury
         contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         large_contours = [cnt for cnt in contours if cv2.contourArea(cnt) > 5000]
         missing_parts = len(large_contours) < 2  # Očekáváme aspoň 2 velké objekty
@@ -336,13 +278,31 @@ def detect_anomaly_in_image(document_id: int, minio_client: Minio):
             return {
                 "anomaly_detected": True,
                 "message": "Byly detekovány anomálie.",
-                "details": ", ".join(anomaly_types)
+                "details": ", ".join(anomaly_types),
+                "analysis": {
+                    "blur_score": laplacian_var,
+                    "red_ratio": red_ratio,
+                    "dark_area_ratio": dark_area,
+                    "contour_count": len(large_contours)
+                }
             }
         else:
             return {
                 "anomaly_detected": False,
-                "message": "Žádné zjevné anomálie nebyly detekovány. (Omezená přesnost)",
-                "details": None
+                "message": "Žádné zjevné anomálie nebyly detekovány.",
+                "details": None,
+                "analysis": {
+                    "blur_score": laplacian_var,
+                    "red_ratio": red_ratio,
+                    "dark_area_ratio": dark_area,
+                    "contour_count": len(large_contours)
+                }
             }
     except Exception as e:
+        logger.error(f"Chyba při detekci anomálií: {e}")
         return {"anomaly_detected": False, "message": f"Chyba při zpracování: {e}"}
+    finally:
+        db.close()
+        if 'response' in locals():
+            response.close()
+            response.release_conn()
