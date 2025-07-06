@@ -12,8 +12,16 @@ const ProjectList: React.FC = () => {
 
   const fetchProjects = () => {
     fetch('/api/projects/')
-      .then(response => response.json())
-      .then(data => setProjects(data));
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => setProjects(data))
+      .catch(error => {
+        console.error('Error fetching projects:', error);
+      });
   };
 
   useEffect(() => {
@@ -28,6 +36,9 @@ const ProjectList: React.FC = () => {
         if (response.ok) {
           fetchProjects(); // Refresh project list
         }
+      })
+      .catch(error => {
+        console.error('Error deleting project:', error);
       });
   };
 

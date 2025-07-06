@@ -14,12 +14,22 @@ const EditProjectForm: React.FC = () => {
   const [description, setDescription] = useState('');
 
   useEffect(() => {
-    fetch(`/api/projects/${projectId}`)
-      .then(response => response.json())
-      .then((data: Project) => {
-        setName(data.name);
-        setDescription(data.description);
-      });
+    if (projectId) {
+      fetch(`/api/projects/${projectId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
+        .then((data: Project) => {
+          setName(data.name);
+          setDescription(data.description);
+        })
+        .catch(error => {
+          console.error('Error fetching project:', error);
+        });
+    }
   }, [projectId]);
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -35,6 +45,9 @@ const EditProjectForm: React.FC = () => {
         if (response.ok) {
           navigate(`/projects/${projectId}`);
         }
+      })
+      .catch(error => {
+        console.error('Error updating project:', error);
       });
   };
 

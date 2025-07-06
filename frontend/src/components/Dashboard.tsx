@@ -12,8 +12,16 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetch('/api/dashboard_stats/')
-      .then(response => response.json())
-      .then(data => setStats(data));
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => setStats(data))
+      .catch(error => {
+        console.error('Error fetching dashboard stats:', error);
+      });
   }, []);
 
   if (!stats) {

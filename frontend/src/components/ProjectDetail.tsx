@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import PdfViewer from './PdfViewer';
@@ -51,33 +51,41 @@ const ProjectDetail: React.FC = () => {
   const [overallProgress, setOverallProgress] = useState<number | null>(null);
   const [editingProgressLog, setEditingProgressLog] = useState<ProgressLog | null>(null);
   const [pdfToView, setPdfToView] = useState<string | null>(null);
-  const [filterCategory, setFilterCategory] = useState<string>(''); // eslint-disable-line @typescript-eslint/no-unused-vars
   const [ocrResult, setOcrResult] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<any[]>([]);
   const [aisleCountResult, setAisleCountResult] = useState<any | null>(null);
 
-  const fetchProject = () => {
+  const fetchProject = useCallback(() => {
+    if (!projectId) return;
+    
     fetch(`/api/projects/${projectId}`)
-      .then(response => response.json())
-      .then(data => setProject(data));
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => setProject(data))
+      .catch(error => {
+        console.error('Error fetching project:', error);
+      });
+    
     fetch(`/api/projects/${projectId}/overall_progress/`)
-      .then(response => response.json())
-      .then(data => setOverallProgress(data.overall_progress));
-  };
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => setOverallProgress(data.overall_progress))
+      .catch(error => {
+        console.error('Error fetching overall progress:', error);
+      });
+  }, [projectId]);
 
   useEffect(() => {
     fetchProject();
-  }, [projectId, fetchProject]);
-
-  useEffect(() => {
-    let url = `/api/projects/${projectId}/documents/`;
-    if (filterCategory) {
-      url += `?category=${filterCategory}`;
-    }
-    fetch(url)
-      .then(response => response.json())
-      .then(data => setProject(prevProject => prevProject ? { ...prevProject, documents: data } : null));
-  }, [projectId, filterCategory]);
+  }, [fetchProject]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -86,7 +94,7 @@ const ProjectDetail: React.FC = () => {
   };
 
   const handleFileUpload = () => {
-    if (selectedFile) {
+    if (selectedFile && projectId) {
       const formData = new FormData();
       formData.append('file', selectedFile);
       if (selectedCategory) {
@@ -97,18 +105,28 @@ const ProjectDetail: React.FC = () => {
         method: 'POST',
         body: formData,
       })
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
         .then(data => {
           console.log('File uploaded:', data);
           fetchProject(); // Refresh project details to show new document
           setSelectedFile(null);
           setSelectedCategory('');
+        })
+        .catch(error => {
+          console.error('Error uploading file:', error);
         });
     }
   };
 
   const handleProgressSubmit = (event: React.FormEvent) => {
     event.preventDefault();
+    if (!projectId) return;
+
     const method = editingProgressLog ? 'PUT' : 'POST';
     const url = editingProgressLog
       ? `/api/progress_logs/${editingProgressLog.id}`
@@ -125,13 +143,21 @@ const ProjectDetail: React.FC = () => {
         notes: notes,
       }),
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
       .then(data => {
         console.log('Progress log saved:', data);
         fetchProject(); // Refresh project details to show new progress log
         setPercentageCompleted(0);
         setNotes('');
         setEditingProgressLog(null);
+      })
+      .catch(error => {
+        console.error('Error saving progress log:', error);
       });
   };
 
@@ -143,6 +169,9 @@ const ProjectDetail: React.FC = () => {
         if (response.ok) {
           fetchProject(); // Refresh project details
         }
+      })
+      .catch(error => {
+        console.error('Error deleting progress log:', error);
       });
   };
 
@@ -160,7 +189,12 @@ const ProjectDetail: React.FC = () => {
     fetch(`/api/documents/${documentId}/ocr`, {
       method: 'POST',
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.ocr_text) {
           setOcrResult(data.ocr_text);
@@ -180,7 +214,12 @@ const ProjectDetail: React.FC = () => {
     fetch(`/api/documents/${documentId}/count_aisles`, {
       method: 'POST',
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
       .then(data => {
         setAisleCountResult(data);
       })

@@ -47,11 +47,19 @@ const PhaseList: React.FC<PhaseListProps> = ({
       },
       body: JSON.stringify({ name: newPhaseName, description: newPhaseDescription }),
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
       .then(() => {
         setNewPhaseName('');
         setNewPhaseDescription('');
         onPhaseAdded();
+      })
+      .catch(error => {
+        console.error('Error adding phase:', error);
       });
   };
 
@@ -64,10 +72,18 @@ const PhaseList: React.FC<PhaseListProps> = ({
         },
         body: JSON.stringify({ name: editingPhase.name, description: editingPhase.description }),
       })
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.json();
+        })
         .then(() => {
           setEditingPhase(null);
           onPhaseUpdated();
+        })
+        .catch(error => {
+          console.error('Error updating phase:', error);
         });
     }
   };
@@ -76,12 +92,16 @@ const PhaseList: React.FC<PhaseListProps> = ({
     fetch(`/api/phases/${phaseId}`, {
       method: 'DELETE',
     })
-      .then(() => {
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
         onPhaseDeleted();
+      })
+      .catch(error => {
+        console.error('Error deleting phase:', error);
       });
   };
-
-  
 
   const handleUpdateTask = (taskId: number, taskName: string, taskDescription: string, taskStatus: string) => {
     fetch(`/api/tasks/${taskId}`, {
@@ -91,9 +111,17 @@ const PhaseList: React.FC<PhaseListProps> = ({
       },
       body: JSON.stringify({ name: taskName, description: taskDescription, status: taskStatus }),
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
       .then(() => {
         onTaskUpdated();
+      })
+      .catch(error => {
+        console.error('Error updating task:', error);
       });
   };
 
@@ -101,8 +129,14 @@ const PhaseList: React.FC<PhaseListProps> = ({
     fetch(`/api/tasks/${taskId}`, {
       method: 'DELETE',
     })
-      .then(() => {
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
         onTaskDeleted();
+      })
+      .catch(error => {
+        console.error('Error deleting task:', error);
       });
   };
 
@@ -207,11 +241,19 @@ const AddTaskForm: React.FC<AddTaskFormProps> = ({ phaseId, onTaskAdded }) => {
       },
       body: JSON.stringify({ name: newTaskName, description: newTaskDescription }),
     })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
       .then(() => {
         setNewTaskName('');
         setNewTaskDescription('');
         onTaskAdded();
+      })
+      .catch(error => {
+        console.error('Error adding task:', error);
       });
   };
 
