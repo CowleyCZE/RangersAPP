@@ -1,0 +1,15 @@
+# Root .gitignore
+node_modules/
+__pycache__/
+.env
+.DS_Store
+.vscode/
+.idea/
+dist/
+build/
+*.egg-info/
+venv/
+env/
+
+# Keep examples
+!.env.example
