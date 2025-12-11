@@ -8,6 +8,8 @@
 
 **GDForge AI** je revoluční nástroj pro text-to-engine automatizaci v Godot. Namísto ručního klikání v editoru zadáte popis v přirozeném jazyce a AI vygeneruje kompletní herní scény s skripty.
 
+````markdown
+```bash
 ```
 Prompt: "Vytvoř level s tilemapou, hráčem a kamerou"
     ↓
