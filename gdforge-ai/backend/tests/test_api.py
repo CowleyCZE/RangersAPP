@@ -2,8 +2,9 @@
 
 import pytest
 from fastapi.testclient import TestClient
-from app.main import app
+from app.main import create_app
 
+app = create_app()
 client = TestClient(app)
 
 
@@ -54,7 +55,7 @@ async def test_generate_blueprint_structure():
         "signals": [],
         "summary": "Test scene"
     }
-    
+
     assert "scenes" in blueprint
     assert "scripts" in blueprint
     assert "resources" in blueprint

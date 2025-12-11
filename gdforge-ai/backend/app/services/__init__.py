@@ -5,7 +5,7 @@ from .gdscript_generator import GDScriptGenerator
 
 __all__ = [
     "get_llm_provider",
-    "OpenAIProvider", 
+    "OpenAIProvider",
     "AnthropicProvider",
     "GDScriptGenerator"
 ]

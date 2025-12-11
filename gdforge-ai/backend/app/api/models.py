@@ -6,7 +6,7 @@ from typing import Optional, List, Dict, Any
 
 class GenerateRequest(BaseModel):
     """Request pro generování Installer.gd"""
-    
+
     prompt: str = Field(
         ...,
         description="Přirozený jazyk popis herní architektury",
@@ -26,7 +26,7 @@ class GenerateRequest(BaseModel):
 
 class GenerateResponse(BaseModel):
     """Response po generování"""
-    
+
     success: bool = Field(
         ...,
         description="Zda se generování povedlo"
@@ -55,7 +55,7 @@ class GenerateResponse(BaseModel):
 
 class HealthResponse(BaseModel):
     """Response pro health check"""
-    
+
     status: str = Field(
         ...,
         description="Status aplikace",

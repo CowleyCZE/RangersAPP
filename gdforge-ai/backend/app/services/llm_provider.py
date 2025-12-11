@@ -9,15 +9,15 @@ from app.core.exceptions import LLMException
 
 class LLMProvider(ABC):
     """Abstraktní třída pro LLM poskytovatele"""
-    
+
     @abstractmethod
     async def analyze_prompt(self, user_prompt: str) -> dict:
         """
         Analyzuje uživatelský prompt a vrací strukturovaný plán
-        
+
         Args:
             user_prompt: Zadání uživatele v přirozeném jazyce
-            
+
         Returns:
             dict: Strukturovaný plán s informacemi o scénách, skriptech, zdrojích
         """
@@ -26,19 +26,19 @@ class LLMProvider(ABC):
 
 class OpenAIProvider(LLMProvider):
     """Implementace pro OpenAI API"""
-    
+
     def __init__(self, api_key: str = None):
         if not api_key:
             api_key = settings.openai_api_key
         if not api_key:
             raise LLMException("OpenAI API key not configured", "openai")
-        
+
         try:
             from openai import AsyncOpenAI
             self.client = AsyncOpenAI(api_key=api_key)
         except ImportError:
             raise LLMException("OpenAI package not installed", "openai")
-    
+
     async def analyze_prompt(self, user_prompt: str) -> dict:
         """Analyzuje prompt pomocí GPT-4"""
         try:
@@ -98,7 +98,7 @@ Vrátíš strukturovaný JSON plán (blueprint) s těmito klíči:
 }
 
 Vrátíš POUZE validní JSON bez dalšího textu."""
-            
+
             response = await self.client.chat.completions.create(
                 model=settings.llm_model,
                 messages=[
@@ -108,11 +108,11 @@ Vrátíš POUZE validní JSON bez dalšího textu."""
                 temperature=0.7,
                 response_format={"type": "json_object"}
             )
-            
+
             content = response.choices[0].message.content
             blueprint = json.loads(content)
             return blueprint
-            
+
         except json.JSONDecodeError as e:
             raise LLMException(f"Invalid JSON response: {str(e)}", "openai")
         except Exception as e:
@@ -121,19 +121,19 @@ Vrátíš POUZE validní JSON bez dalšího textu."""
 
 class AnthropicProvider(LLMProvider):
     """Implementace pro Anthropic Claude API"""
-    
+
     def __init__(self, api_key: str = None):
         if not api_key:
             api_key = settings.anthropic_api_key
         if not api_key:
             raise LLMException("Anthropic API key not configured", "anthropic")
-        
+
         try:
             from anthropic import Anthropic
             self.client = Anthropic(api_key=api_key)
         except ImportError:
             raise LLMException("Anthropic package not installed", "anthropic")
-    
+
     async def analyze_prompt(self, user_prompt: str) -> dict:
         """Analyzuje prompt pomocí Claude"""
         try:
@@ -157,7 +157,7 @@ Vrátíš strukturovaný JSON plán (blueprint) s těmito klíči:
 }
 
 Vrátíš POUZE validní JSON bez dalšího textu."""
-            
+
             response = self.client.messages.create(
                 model="claude-3-sonnet-20231222",
                 max_tokens=4096,
@@ -166,11 +166,11 @@ Vrátíš POUZE validní JSON bez dalšího textu."""
                     {"role": "user", "content": user_prompt}
                 ]
             )
-            
+
             content = response.content[0].text
             blueprint = json.loads(content)
             return blueprint
-            
+
         except json.JSONDecodeError as e:
             raise LLMException(f"Invalid JSON response: {str(e)}", "anthropic")
         except Exception as e:
@@ -180,7 +180,7 @@ Vrátíš POUZE validní JSON bez dalšího textu."""
 def get_llm_provider() -> LLMProvider:
     """Vrací instanci LLM poskytovatele na základě konfigurace"""
     provider = settings.llm_provider.lower()
-    
+
     if provider == "openai":
         return OpenAIProvider()
     elif provider == "anthropic":

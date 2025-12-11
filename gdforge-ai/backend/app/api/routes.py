@@ -12,6 +12,12 @@ router = APIRouter()
 generator = GDScriptGenerator()
 
 
+def _generate_filename(scene_name: str) -> str:
+    """Generuje bezpečné jméno souboru"""
+    safe_name = re.sub(r'[^a-zA-Z0-9_]', '_', scene_name)
+    return f"{safe_name}_Installer.gd"
+
+
 @router.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint"""
@@ -26,7 +32,7 @@ async def health_check():
 async def generate_installer(request: GenerateRequest):
     """
     Generuje Installer.gd ze zadaného promptu
-    
+
     Proces:
     1. Analýza promptu pomocí LLM → strukturovaný blueprint
     2. Validace blueprintu
@@ -37,14 +43,14 @@ async def generate_installer(request: GenerateRequest):
         # 1. Analýza promptu
         llm_provider = get_llm_provider()
         blueprint = await llm_provider.analyze_prompt(request.prompt)
-        
+
         # 2. Generování GDScript
         installer_code = generator.generate(blueprint, request.project_root)
-        
+
         # 3. Generování jména souboru
         scene_names = [s.get("name", "Scene") for s in blueprint.get("scenes", [])]
         filename = _generate_filename(scene_names[0] if scene_names else "Project")
-        
+
         return GenerateResponse(
             success=True,
             blueprint=blueprint if request.format == "json" else None,
@@ -52,7 +58,7 @@ async def generate_installer(request: GenerateRequest):
             filename=filename,
             message=f"Successfully generated installer for {len(blueprint.get('scenes', []))} scenes"
         )
-    
+
     except LLMException as e:
         raise HTTPException(
             status_code=e.status_code,
@@ -81,7 +87,7 @@ async def generate_blueprint(request: GenerateRequest):
     try:
         llm_provider = get_llm_provider()
         blueprint = await llm_provider.analyze_prompt(request.prompt)
-        
+
         return {
             "success": True,
             "blueprint": blueprint
