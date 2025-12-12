@@ -209,7 +209,7 @@ npm run lint
 
 Viz [DEPLOYMENT.md](gdforge-ai/DEPLOYMENT.md) pro všechny možnosti.
 
-## 📝 Příklady Promptů
+<h2>📝 Příklady Promptů</h2>
 
 ```python
 # 1. Level s tilemapou
@@ -227,9 +227,9 @@ Viz [DEPLOYMENT.md](gdforge-ai/DEPLOYMENT.md) pro všechny možnosti.
 
 Více příkladů v [examples/EXAMPLES.md](gdforge-ai/examples/EXAMPLES.md) 📚
 
-## 🔑 Configuration
+<h2>🔑 Configuration</h2>
 
-### Backend (.env)
+<h3>Backend (.env)</h3>
 ```env
 OPENAI_API_KEY=sk-your-key
 LLM_PROVIDER=openai
@@ -237,19 +237,19 @@ LLM_MODEL=gpt-4-turbo-preview
 DEBUG=false
 ```
 
-### Frontend (.env)
+<h3>Frontend (.env)</h3>
 ```env
 REACT_APP_API_URL=http://localhost:8000/api
 ```
 
-## 🎓 Learning Resources
+<h2>🎓 Learning Resources</h2>
 
 - [Godot Dokumentace](https://docs.godotengine.org/)
 - [FastAPI Tutorial](https://fastapi.tiangolo.com/)
 - [React Docs](https://react.dev/)
 - [TypeScript Handbook](https://www.typescriptlang.org/docs/)
 
-## 🤝 Contributing
+<h2>🤝 Contributing</h2>
 
 Vítáme pull requesty! Viz [CONTRIBUTING.md](gdforge-ai/CONTRIBUTING.md) pro guidelines.
 
@@ -267,38 +267,38 @@ make test
 # Submit PR
 ```
 
-## 📄 Licence
+<h2>📄 Licence</h2>
 
 MIT License - Volně použitelný v komerčních i soukromých projektech.
 
-## 🐛 Issues & Support
+<h2>🐛 Issues & Support</h2>
 
 - **Bug Reports**: [GitHub Issues](https://github.com/CowleyCZE/RangersAPP/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/CowleyCZE/RangersAPP/discussions)
 - **Docs**: Viz [docs/](gdforge-ai/docs/)
 
-## 🗓️ Roadmap
+<h2>🗓️ Roadmap</h2>
 
-### v0.1.0 ✅
+<h3>v0.1.0 ✅</h3>
 - [x] Core architecture
 - [x] REST API
 - [x] React frontend
 - [x] OpenAI/Anthropic integration
 - [x] Comprehensive documentation
 
-### v0.2.0 (Q1 2025)
+<h3>v0.2.0 (Q1 2025)</h3>
 - [ ] Godot Editor plugin
 - [ ] Database support
 - [ ] User authentication
 - [ ] Blueprint versioning
 
-### v0.3.0+ (Q2 2025)
+<h3>v0.3.0+ (Q2 2025)</h3>
 - [ ] Team collaboration
 - [ ] Advanced AI models
 - [ ] Visual blueprint editor
 - [ ] Performance optimization
 
-## 🏆 Proč GDForge AI?
+<h2>🏆 Proč GDForge AI?</h2>
 
 | Benefit | Details |
 |---------|---------|
@@ -308,7 +308,7 @@ MIT License - Volně použitelný v komerčních i soukromých projektech.
 | 🔄 **Opakování** | Shareable prompty |
 | 🚀 **Efektivita** | Zero-bug vygenerované kódy |
 
-## 💡 Inovativní Přístup
+<h2>💡 Inovativní Přístup</h2>
 
 GDForge AI uplatňuje **Infrastructure as Code** na game development:
 
@@ -316,7 +316,7 @@ GDForge AI uplatňuje **Infrastructure as Code** na game development:
 - Místo klikání → Text-to-Engine
 - Inspirace z: Terraform, Kubernetes, CloudFormation
 
-## 🎮 Perfect For
+<h2>🎮 Perfect For</h2>
 
 - ✅ Indie game developers
 - ✅ Game jam participants
@@ -325,7 +325,7 @@ GDForge AI uplatňuje **Infrastructure as Code** na game development:
 - ✅ Project scaffolding
 - ✅ Learning Godot architecture
 
-## 📊 Project Stats
+<h2>📊 Project Stats</h2>
 
 - **Backend**: ~1,500 LOC (Python)
 - **Frontend**: ~800 LOC (TypeScript/React)
@@ -335,7 +335,7 @@ GDForge AI uplatňuje **Infrastructure as Code** na game development:
 - **Docker Ready**: ✅
 - **Production Ready**: ✅
 
-## 🚀 Getting Started
+<h2>🚀 Getting Started</h2>
 
 ```bash
 # 1. Clone
@@ -357,20 +357,20 @@ make frontend &         # Terminal 2
 open http://localhost:5173
 ```
 
-## 📞 Contact & Support
+<h2>📞 Contact & Support</h2>
 
 - 💬 **GitHub Issues**: Bug reports
 - 💡 **GitHub Discussions**: Questions & ideas
 - 📚 **Documentation**: Comprehensive guides
 - 🤝 **Contributing**: Pull requests welcome
 
-## ⭐ Give a Star!
+<h2>⭐ Give a Star!</h2>
 
 Pokud se ti projekt líbí, prosím přidělej mu hvězdu! ⭐
 
 ---
 
-## 📄 Quick Links
+<h2>📄 Quick Links</h2>
 
 | Obsah | Link |
 |-------|------|
